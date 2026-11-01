@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 from app.ai import call_model
-from app.datacreate import to_numpy
+from app.datacreate import to_numpy, build_summary
 from app.weather import fetch_weather
 import logging
 
@@ -26,8 +26,16 @@ async def predict(lat: float, lon: float):
     data  = await fetch_weather(lat, lon)
     dates, values = to_numpy(data)
 
-    logger.info(dates)
-    logger.info(values)
+    summary = build_summary(dates, values)
 
+    prompt = f"""
+        You are a weather assistant.
+        Here is the weather for the last 7 days:
+        
+        {summary}
+        
+        predict tomorrow's temperature and chance of rain. Explain briefly why."""
 
-    # return data
+    predictation = await call_model(prompt)
+
+    logger.info(predictation)
